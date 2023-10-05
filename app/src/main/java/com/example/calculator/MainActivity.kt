@@ -7,7 +7,7 @@ import android.text.TextWatcher
 import android.widget.Button
 import android.widget.TextView
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity() {//test
     private lateinit var tv_cal: TextView
     private lateinit var tv_preview: TextView
 
@@ -69,13 +69,7 @@ class MainActivity : AppCompatActivity() {
                 tv_cal.text = updatedText
             }
         }
-        btn_minus.setOnClickListener {
-            val currentText = tv_cal.text.toString()
-            if (currentText.isEmpty() || currentText.last() in setOf('+', '-', 'x', '/', '%')) {
-                appendText("-") // 단항 연산자로 사용
-            } else {
-                appendText("-") // 이항 연산자로 사용
-            }
+        btn_minus.setOnClickListener {appendText("-")
         }
         btn_clear.setOnClickListener { clearText() }
 
@@ -84,7 +78,7 @@ class MainActivity : AppCompatActivity() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
                 try {
-                    val result = calculateExpression(s.toString())
+                    val result = calculateExpression((tv_cal.text).toString())
                     tv_preview.text = result.toString()
                 } catch (e: Exception) {
                     tv_preview.text = ""
@@ -93,60 +87,54 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    fun calculateExpression(expression: String): Any {
-        val operators = mutableListOf<Char>()
-        val operands = mutableListOf<Double>()
-        var result: Double = 0.0
-        var currentNumber = ""
-        var isNegative = false // 음수 여부를 나타내는 플래그
+fun calculateExpression(expression: String): Any {
+    val operators = mutableListOf<Char>()
+    val operands = mutableListOf<Double>()
+    var currentNumber = ""
+    var result: Double = 0.0
 
-        for (char in expression) {
-            if (char.isDigit() || char == '.') {
-                currentNumber += char
-            } else if (char in setOf('+', '-', 'x', '/', '%')) {
-                if (currentNumber.isNotEmpty()) {
-                    operands.add(if (isNegative) -currentNumber.toDouble() else currentNumber.toDouble())
-                    currentNumber = ""
-                    isNegative = false
-                }
-                while (operators.isNotEmpty() && hasPrecedence(char, operators.last())) {
-                    val operator = operators.removeAt(operators.size - 1)
-                    if (operands.size < 2) {
-                        throw IllegalArgumentException("Not enough operands for operator: $operator")
-                    }
-                    val operand2 = operands.removeAt(operands.size - 1)
-                    val operand1 = operands.removeAt(operands.size - 1)
-                    operands.add(performOperation(operand1, operand2, operator))
-                }
-                operators.add(char)
-                if (char == '-') {
-                    // 연산자가 '-'일 경우 음수로 처리
-                    isNegative = true
-                }
+    for (char in expression) {
+        if (char.isDigit() || char == '.') {
+            currentNumber += char
+        } else if (char in setOf('+', '-', 'x', '/', '%')) {
+            if (currentNumber.isNotEmpty()) {
+                operands.add(currentNumber.toDouble())
+                currentNumber = ""
             }
-        }
-
-        if (currentNumber.isNotEmpty()) {
-            operands.add(if (isNegative) -currentNumber.toDouble() else currentNumber.toDouble())
-        }
-
-        while (operators.isNotEmpty()) {
-            val operator = operators.removeAt(operators.size - 1)
-            if (operands.size < 2) {
-                throw IllegalArgumentException("Not enough operands for operator: $operator")
+            while (operators.isNotEmpty() && hasPrecedence(char, operators.last())) {
+                val operator = operators.removeAt(operators.size - 1)
+                if (operands.size < 2) {
+                    throw IllegalArgumentException("Not enough operands for operator: $operator")
+                }
+                val operand2 = operands.removeAt(operands.size - 1)
+                val operand1 = operands.removeAt(operands.size - 1)
+                operands.add(performOperation(operand1, operand2, operator))
             }
-            val operand2 = operands.removeAt(operands.size - 1)
-            val operand1 = operands.removeAt(operands.size - 1)
-            operands.add(performOperation(operand1, operand2, operator))
-        }
-
-        result = operands.first()
-        if ((result - result.toInt()) == 0.0) {
-            return result.toInt()
-        } else {
-            return result
+            operators.add(char)
         }
     }
+
+    if (currentNumber.isNotEmpty()) {
+        operands.add(currentNumber.toDouble())
+    }
+
+    while (operators.isNotEmpty()) {
+        val operator = operators.removeAt(operators.size - 1)
+        if (operands.size < 2) {
+            throw IllegalArgumentException("Not enough operands for operator: $operator")
+        }
+        val operand2 = operands.removeAt(operands.size - 1)
+        val operand1 = operands.removeAt(operands.size - 1)
+        operands.add(performOperation(operand1, operand2, operator))
+    }
+
+    result = operands.first()
+    if ((result - result.toInt()) == 0.0) {
+        return result.toInt()
+    } else {
+        return result
+    }
+}
 
     fun hasPrecedence(op1: Char, op2: Char): Boolean {
         if (op2 == '(' || op2 == ')') return false
